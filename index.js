@@ -15,6 +15,27 @@ document.addEventListener('DOMContentLoaded', () => {
         const actionBtnDuplicateSelected = document.getElementById('action-btn-duplicate-selected-segment');
         const actionBtnDeleteSelected = document.getElementById('action-btn-delete-selected-segment');
         const segmentTableBody = document.getElementById('segment-table-body');
+        const segmentTable = segmentTableBody ? segmentTableBody.closest('table') : null;
+        if (segmentTable && segmentTable.tHead === null) {
+            const thead = document.createElement('thead');
+            thead.className = 'bg-[#f3f3f3]';
+            thead.innerHTML = `<tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-[#226693] uppercase tracking-wider">Nombre del Segmento</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-[#226693] uppercase tracking-wider">Descripción</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-[#226693] uppercase tracking-wider">N.º de Cuentas</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-[#226693] uppercase tracking-wider">Tipo</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-[#226693] uppercase tracking-wider">Creación</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-[#226693] uppercase tracking-wider">Modificación</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-[#226693] uppercase tracking-wider">Creado por</th>
+            </tr>`;
+            segmentTable.insertBefore(thead, segmentTable.firstChild);
+        }
+        if (segmentTable && !segmentTableBody) {
+            const tbody = document.createElement('tbody');
+            tbody.id = 'segment-table-body';
+            tbody.className = 'bg-[#ffffff] divide-y divide-[#ededed]';
+            segmentTable.appendChild(tbody);
+        }
         const segmentEditorTitle = document.getElementById('segment-editor-title');
         const segmentIdFields = document.getElementById('segment-identification-fields');
         const segmentNameInput = document.getElementById('segment-name');
@@ -215,7 +236,53 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         const btnSaveSegmentOnlyEditor = document.getElementById('btn-save-segment-only');
-        if(btnSaveSegmentOnlyEditor) btnSaveSegmentOnlyEditor.addEventListener('click', () => { if (currentEditorMode === 'create' && segmentIdFields && segmentIdFields.classList.contains('hidden')) { segmentIdFields.classList.remove('hidden'); if (segmentNameInput && !segmentNameInput.value.trim()) { openSaveSegmentModal('saveOnly'); return; } } const isNameEmptyForSaving = (segmentNameInput && !segmentNameInput.value.trim()); if (isNameEmptyForSaving) { if (currentEditorMode === 'create') openSaveSegmentModal('saveOnly'); else { const errorEl = document.getElementById('error-segment-name'); if(errorEl) errorEl.classList.remove('hidden'); if(segmentNameInput) segmentNameInput.focus(); } return; } const errorEl = document.getElementById('error-segment-name'); if(errorEl) errorEl.classList.add('hidden'); const nameToSave = segmentNameInput ? segmentNameInput.value : 'Nuevo Segmento'; showToast(`Segmento "${nameToSave}" grabado.`); showScreen('list'); });
+        if(btnSaveSegmentOnlyEditor) btnSaveSegmentOnlyEditor.addEventListener('click', () => {
+            if (currentEditorMode === 'create' && segmentIdFields && segmentIdFields.classList.contains('hidden')) {
+                segmentIdFields.classList.remove('hidden');
+                if (segmentNameInput && !segmentNameInput.value.trim()) {
+                    openSaveSegmentModal('saveOnly');
+                    return;
+                }
+            }
+            const isNameEmptyForSaving = (segmentNameInput && !segmentNameInput.value.trim());
+            if (isNameEmptyForSaving) {
+                if (currentEditorMode === 'create') openSaveSegmentModal('saveOnly');
+                else {
+                    const errorEl = document.getElementById('error-segment-name');
+                    if(errorEl) errorEl.classList.remove('hidden');
+                    if(segmentNameInput) segmentNameInput.focus();
+                }
+                return;
+            }
+            const errorEl = document.getElementById('error-segment-name');
+            if(errorEl) errorEl.classList.add('hidden');
+            const nameToSave = segmentNameInput ? segmentNameInput.value : 'Nuevo Segmento';
+            const descToSave = segmentDescriptionInput ? segmentDescriptionInput.value : '';
+            // Añadir el nuevo segmento a la tabla
+            const tbody = document.getElementById('segment-table-body');
+            if(tbody) {
+                const now = new Date();
+                const fecha = now.toLocaleDateString('es-ES');
+                const row = document.createElement('tr');
+                row.className = 'segment-row cursor-pointer hover:bg-[#f0f9ff]';
+                row.dataset.segmentName = nameToSave;
+                row.dataset.segmentType = 'personalizado';
+                row.dataset.segmentDescription = descToSave;
+                row.dataset.segmentAccounts = filteredAccountsCountEl ? filteredAccountsCountEl.textContent : '0';
+                row.innerHTML = `
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-[#074863] font-medium">${nameToSave}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-[#6e6e6e]">${descToSave}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-[#6e6e6e]">${filteredAccountsCountEl ? filteredAccountsCountEl.textContent : '0'}</td>
+                    <td class="px-4 py-3 whitespace-nowrap"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-[#ededed] text-[#226693]">Personalizado</span></td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-[#6e6e6e]">${fecha}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-[#6e6e6e]">${fecha}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-[#6e6e6e]">Usuario</td>
+                `;
+                tbody.appendChild(row);
+            }
+            showToast(`Segmento "${nameToSave}" grabado.`);
+            showScreen('list');
+        });
         
         const btnUseSegmentForCampaign = document.getElementById('btn-use-segment-for-campaign');
         if(btnUseSegmentForCampaign) btnUseSegmentForCampaign.addEventListener('click', (e) => { 
